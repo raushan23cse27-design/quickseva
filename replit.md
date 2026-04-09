@@ -16,6 +16,28 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 
+## Artifacts
+
+### QuickSeva (artifacts/quickseva)
+- React + Vite web app at `/`
+- Local service marketplace for finding providers by PIN code
+- Uses localStorage for all data (no backend)
+- Features: Provider signup/approval, booking system, user/provider dashboards, admin panel, ratings, earnings
+
+#### Credentials
+- Admin login: `admin@quickseva.com` / `admin123`
+- Demo providers preloaded (use "Find Services" button)
+
+#### Pages
+- `/` — Home with PIN code search and category browse
+- `/login` — User/Provider login (tabs)
+- `/signup` — User registration
+- `/provider-signup` — Provider registration form
+- `/book/:id` — Book a specific provider
+- `/dashboard` — User dashboard with booking status tracking
+- `/provider-dashboard` — Provider dashboard with earnings, job management
+- `/admin` — Admin panel to approve/reject providers
+
 ## Key Commands
 
 - `pnpm run typecheck` — full typecheck across all packages

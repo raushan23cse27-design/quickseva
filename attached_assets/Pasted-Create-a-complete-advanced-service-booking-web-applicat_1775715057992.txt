@@ -1,0 +1,190 @@
+Create a complete advanced service booking web application named "QuickSeva" using HTML, CSS, and JavaScript (no frameworks). The design should be modern, clean, and highly attractive, like a real startup product.
+
+---------------------------------------
+CORE IDEA:
+---------------------------------------
+QuickSeva is a local service marketplace where users can find nearby service providers using PIN code and book services easily.
+
+---------------------------------------
+1. HOME PAGE:
+---------------------------------------
+- Logo: QuickSeva
+- Navbar: Home, Services, Login, Signup
+- Hero section with tagline:
+  "Find Trusted Local Services Near You"
+- Add PIN code search input
+- Button: "Find Services"
+
+---------------------------------------
+2. PIN CODE BASED SEARCH:
+---------------------------------------
+- When user enters PIN code:
+  → Show only providers matching that PIN code
+- Store provider data with pin_code
+- Filter using JavaScript
+
+---------------------------------------
+3. SERVICE CATEGORIES:
+---------------------------------------
+Add detailed categories:
+
+Electrical:
+- Fan repair
+- Switch repair
+- Wiring
+
+AC & Cooling:
+- AC repair
+- AC installation
+- Cooler repair
+- Fridge repair
+
+Plumbing:
+- Pipe leakage
+- Tap repair
+- Bathroom fitting
+
+Appliance Repair:
+- TV repair
+- Washing machine repair
+
+Home Services:
+- Cleaning
+- Painting
+- Pest control
+
+---------------------------------------
+4. PROVIDER SYSTEM:
+---------------------------------------
+Provider Signup fields:
+- Owner Name
+- Shop Name
+- Phone
+- Category
+- Address
+- PIN Code
+- Opening Time
+- Closing Time
+- Email
+- Password
+
+Default:
+status = "Pending"
+rating = 0
+earnings = 0
+
+---------------------------------------
+5. ADMIN SYSTEM:
+---------------------------------------
+Admin login (hardcoded)
+
+Dashboard:
+- View all providers
+- Approve / Reject
+- Change status to Approved
+
+---------------------------------------
+6. SERVICE LISTING:
+---------------------------------------
+Show only approved providers
+
+Each card shows:
+- Shop Name
+- Category
+- Address
+- Rating ⭐
+- Status (OPEN / CLOSED)
+- Button: Book Service
+
+---------------------------------------
+7. OPEN/CLOSED LOGIC:
+---------------------------------------
+If current time between opening and closing:
+→ Show "OPEN" (green)
+Else:
+→ Show "CLOSED" (red)
+
+---------------------------------------
+8. MAP SYSTEM:
+---------------------------------------
+- Show simple map placeholder
+- Display provider location (text-based)
+- Optional: embed Google Maps iframe
+
+---------------------------------------
+9. BOOKING SYSTEM:
+---------------------------------------
+User can:
+- Select provider
+- Fill form:
+  address, problem description, preferred time
+
+After booking:
+status = "Request Sent"
+
+---------------------------------------
+10. USER DASHBOARD:
+---------------------------------------
+Show bookings:
+- Provider name
+- Status:
+  Request Sent → Accepted → On the Way → Completed
+
+---------------------------------------
+11. PROVIDER DASHBOARD:
+---------------------------------------
+- View bookings
+- Accept / Reject
+- Update status:
+  Accepted
+  On the Way
+  Work in Progress
+  Completed
+
+---------------------------------------
+12. RATING SYSTEM:
+---------------------------------------
+- After service complete:
+  user gives rating (1–5 stars)
+- Store rating
+- Show average rating
+
+---------------------------------------
+13. EARNING SYSTEM:
+---------------------------------------
+- Each completed booking adds earning
+- Show:
+  Total Earnings
+  Total Jobs Done
+
+---------------------------------------
+14. UI DESIGN:
+---------------------------------------
+- Blue + white modern theme
+- Cards with shadow
+- Buttons with hover effect
+- Clean layout
+- Mobile responsive
+
+---------------------------------------
+15. TECH:
+---------------------------------------
+- Use HTML forms
+- CSS for styling
+- JavaScript for logic
+- localStorage for data
+
+---------------------------------------
+16. EXTRA:
+---------------------------------------
+- Alerts for success
+- Error messages
+- Logout system
+- Smooth navigation
+
+---------------------------------------
+IMPORTANT:
+---------------------------------------
+- Make it look like a real college major project
+- Keep code clean and understandable
+- Avoid overly complex UI
