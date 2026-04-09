@@ -20,7 +20,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [provider, setProvider] = useState<Provider | null>(null);
 
   useEffect(() => {
-    storage.seedDemoData();
+    // One-time migration: clear legacy demo data if present
+    const MIGRATION_KEY = "qs_v2_clean";
+    if (!localStorage.getItem(MIGRATION_KEY)) {
+      localStorage.removeItem("qs_providers");
+      localStorage.removeItem("qs_users");
+      localStorage.removeItem("qs_bookings");
+      localStorage.removeItem("qs_current_user");
+      localStorage.removeItem("qs_current_provider");
+      localStorage.setItem(MIGRATION_KEY, "1");
+    }
+
     const savedUser = storage.getCurrentUser();
     const savedProvider = storage.getCurrentProvider();
     if (savedUser) setUser(savedUser);

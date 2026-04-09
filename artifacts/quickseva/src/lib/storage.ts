@@ -226,69 +226,6 @@ export const storage = {
     setItem(STORAGE_KEYS.PROVIDERS, providers.map(p => p.id === providerId ? { ...p, status: "Rejected" } : p));
   },
 
-  seedDemoData: () => {
-    const providers = getItem<Provider>(STORAGE_KEYS.PROVIDERS);
-    if (providers.length > 0) return;
-
-    const demoProviders: Provider[] = [
-      {
-        id: "demo1", userId: "u1", ownerName: "Ramesh Kumar", shopName: "Kumar Electricals",
-        phone: "9876543210", email: "ramesh@demo.com", password: "demo123",
-        category: "Electrical", subCategory: "Fan repair",
-        address: "12, MG Road, Bengaluru", pinCode: "560001",
-        openingTime: "08:00", closingTime: "20:00",
-        status: "Approved", rating: 4.5, ratingCount: 12, earnings: 15000, jobsDone: 30,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "demo2", userId: "u2", ownerName: "Suresh Patel", shopName: "CoolAir Solutions",
-        phone: "9876543211", email: "suresh@demo.com", password: "demo123",
-        category: "AC & Cooling", subCategory: "AC repair",
-        address: "45, Koramangala, Bengaluru", pinCode: "560034",
-        openingTime: "09:00", closingTime: "18:00",
-        status: "Approved", rating: 4.2, ratingCount: 8, earnings: 22000, jobsDone: 18,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "demo3", userId: "u3", ownerName: "Vijay Singh", shopName: "Fix It Plumbing",
-        phone: "9876543212", email: "vijay@demo.com", password: "demo123",
-        category: "Plumbing", subCategory: "Pipe leakage",
-        address: "78, JP Nagar, Bengaluru", pinCode: "560078",
-        openingTime: "07:00", closingTime: "19:00",
-        status: "Approved", rating: 4.7, ratingCount: 22, earnings: 18500, jobsDone: 45,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "demo4", userId: "u4", ownerName: "Mohan Reddy", shopName: "Reddy Appliances",
-        phone: "9876543213", email: "mohan@demo.com", password: "demo123",
-        category: "Appliance Repair", subCategory: "TV repair",
-        address: "23, Indiranagar, Bengaluru", pinCode: "560038",
-        openingTime: "10:00", closingTime: "21:00",
-        status: "Approved", rating: 3.9, ratingCount: 5, earnings: 9000, jobsDone: 12,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "demo5", userId: "u5", ownerName: "Priya Sharma", shopName: "CleanHome Services",
-        phone: "9876543214", email: "priya@demo.com", password: "demo123",
-        category: "Home Services", subCategory: "Cleaning",
-        address: "56, Whitefield, Bengaluru", pinCode: "560066",
-        openingTime: "08:00", closingTime: "17:00",
-        status: "Approved", rating: 4.8, ratingCount: 35, earnings: 28000, jobsDone: 70,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: "demo6", userId: "u6", ownerName: "Anil Nair", shopName: "Nair Electricals",
-        phone: "9876543215", email: "anil@demo.com", password: "demo123",
-        category: "Electrical", subCategory: "Wiring",
-        address: "34, HSR Layout, Bengaluru", pinCode: "560102",
-        openingTime: "09:00", closingTime: "19:00",
-        status: "Pending", rating: 0, ratingCount: 0, earnings: 0, jobsDone: 0,
-        createdAt: new Date().toISOString(),
-      },
-    ];
-
-    setItem(STORAGE_KEYS.PROVIDERS, demoProviders);
-  },
 };
 
 export function isProviderOpen(provider: Provider): boolean {
