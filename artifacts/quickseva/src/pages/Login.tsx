@@ -61,12 +61,6 @@ export default function Login() {
           </CardHeader>
 
           <CardContent>
-            {tab === "user" && (
-              <p className="text-xs text-blue-600 bg-blue-50 rounded-lg p-2 mb-4 text-center">
-                Admin: admin@quickseva.com / admin123
-              </p>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <Label>Email</Label>
