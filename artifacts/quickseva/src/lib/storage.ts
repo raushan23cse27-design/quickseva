@@ -227,6 +227,10 @@ export const storage = {
   },
 
   seedSampleData: () => {
+    // Only seed if no providers exist — never overwrite real data
+    const existing = getItem<Provider>(STORAGE_KEYS.PROVIDERS);
+    if (existing.length > 0) return;
+
     const sampleProviders: Provider[] = [
       {
         id: "sp1", userId: "su1", ownerName: "Ramesh Kumar", shopName: "Kumar Electricals",
