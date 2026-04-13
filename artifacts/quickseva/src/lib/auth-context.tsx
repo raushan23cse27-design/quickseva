@@ -20,14 +20,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [provider, setProvider] = useState<Provider | null>(null);
 
   useEffect(() => {
-    // One-time migration: clear legacy demo data if present
-    const MIGRATION_KEY = "qs_v2_clean";
+    // v3: seed sample providers so app is functional from day one
+    const MIGRATION_KEY = "qs_v3_sample";
     if (!localStorage.getItem(MIGRATION_KEY)) {
       localStorage.removeItem("qs_providers");
       localStorage.removeItem("qs_users");
       localStorage.removeItem("qs_bookings");
       localStorage.removeItem("qs_current_user");
       localStorage.removeItem("qs_current_provider");
+      storage.seedSampleData();
       localStorage.setItem(MIGRATION_KEY, "1");
     }
 

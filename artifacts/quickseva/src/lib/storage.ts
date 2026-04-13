@@ -226,6 +226,74 @@ export const storage = {
     setItem(STORAGE_KEYS.PROVIDERS, providers.map(p => p.id === providerId ? { ...p, status: "Rejected" } : p));
   },
 
+  seedSampleData: () => {
+    const sampleProviders: Provider[] = [
+      {
+        id: "sp1", userId: "su1", ownerName: "Ramesh Kumar", shopName: "Kumar Electricals",
+        phone: "9876543210", email: "ramesh@example.com", password: "pass123",
+        category: "Electrical", subCategory: "Fan repair",
+        address: "12, MG Road, Bengaluru", pinCode: "560001",
+        openingTime: "08:00", closingTime: "20:00",
+        status: "Approved", rating: 4.5, ratingCount: 12, earnings: 15000, jobsDone: 30,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "sp2", userId: "su2", ownerName: "Suresh Patel", shopName: "CoolAir Solutions",
+        phone: "9876543211", email: "suresh@example.com", password: "pass123",
+        category: "AC & Cooling", subCategory: "AC repair",
+        address: "45, Koramangala, Bengaluru", pinCode: "560001",
+        openingTime: "09:00", closingTime: "18:00",
+        status: "Approved", rating: 4.2, ratingCount: 8, earnings: 22000, jobsDone: 18,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "sp3", userId: "su3", ownerName: "Vijay Singh", shopName: "Fix It Plumbing",
+        phone: "9876543212", email: "vijay@example.com", password: "pass123",
+        category: "Plumbing", subCategory: "Pipe leakage",
+        address: "78, JP Nagar, Bengaluru", pinCode: "560078",
+        openingTime: "07:00", closingTime: "19:00",
+        status: "Approved", rating: 4.7, ratingCount: 22, earnings: 18500, jobsDone: 45,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "sp4", userId: "su4", ownerName: "Mohan Reddy", shopName: "Reddy Appliances",
+        phone: "9876543213", email: "mohan@example.com", password: "pass123",
+        category: "Appliance Repair", subCategory: "TV repair",
+        address: "23, Indiranagar, Bengaluru", pinCode: "560038",
+        openingTime: "10:00", closingTime: "21:00",
+        status: "Approved", rating: 3.9, ratingCount: 5, earnings: 9000, jobsDone: 12,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "sp5", userId: "su5", ownerName: "Priya Sharma", shopName: "CleanHome Services",
+        phone: "9876543214", email: "priya@example.com", password: "pass123",
+        category: "Home Services", subCategory: "Cleaning",
+        address: "56, Whitefield, Bengaluru", pinCode: "560066",
+        openingTime: "08:00", closingTime: "17:00",
+        status: "Approved", rating: 4.8, ratingCount: 35, earnings: 28000, jobsDone: 70,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "sp6", userId: "su6", ownerName: "Anil Sharma", shopName: "Sharma Electricals",
+        phone: "9812345678", email: "anil@example.com", password: "pass123",
+        category: "Electrical", subCategory: "Wiring",
+        address: "34, HSR Layout, Bengaluru", pinCode: "560038",
+        openingTime: "09:00", closingTime: "19:00",
+        status: "Approved", rating: 4.3, ratingCount: 9, earnings: 12000, jobsDone: 20,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+
+    const sampleUsers: User[] = [
+      {
+        id: "su_demo", name: "Demo User", email: "user@demo.com", password: "demo123",
+        phone: "9999999999", role: "user", createdAt: new Date().toISOString(),
+      },
+    ];
+
+    setItem(STORAGE_KEYS.PROVIDERS, sampleProviders);
+    setItem(STORAGE_KEYS.USERS, sampleUsers);
+  },
 };
 
 export function isProviderOpen(provider: Provider): boolean {
