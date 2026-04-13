@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { storage } from "@/lib/storage";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,22 +15,27 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const { login } = useAuth();
   const [, navigate] = useLocation();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (password !== confirm) { setError("Passwords do not match"); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
-
-    const result = storage.registerUser({ name, email, phone, password });
-    if (!result.success) { setError(result.error || "Registration failed"); return; }
-
-    login(email, password);
-    setSuccess(true);
-    setTimeout(() => navigate("/dashboard"), 1500);
+    setLoading(true);
+    try {
+      await api.registerUser({ name, email, phone, password });
+      await login(email, password);
+      setSuccess(true);
+      setTimeout(() => navigate("/dashboard"), 1500);
+    } catch (e: any) {
+      setError(e.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (success) {
@@ -90,8 +95,8 @@ export default function Signup() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11">
-                Create Account
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11" disabled={loading}>
+                {loading ? "Creating account..." : "Create Account"}
               </Button>
             </form>
 

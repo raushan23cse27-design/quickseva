@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { AlertCircle, Zap } from "lucide-react";
 
 export default function Login() {
@@ -16,19 +16,18 @@ export default function Login() {
   const { login, loginProvider } = useAuth();
   const [, navigate] = useLocation();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    setTimeout(() => {
-      const result = tab === "user" ? login(email, password) : loginProvider(email, password);
-      setLoading(false);
-      if (result.success) {
-        navigate(tab === "user" ? "/dashboard" : "/provider-dashboard");
-      } else {
-        setError(result.error || "Login failed");
-      }
-    }, 400);
+    const result = tab === "user" ? await login(email, password) : await loginProvider(email, password);
+    setLoading(false);
+    if (result.success) {
+      if (tab === "user" && email === "admin@quickseva.com") navigate("/admin");
+      else navigate(tab === "user" ? "/dashboard" : "/provider-dashboard");
+    } else {
+      setError(result.error || "Login failed");
+    }
   };
 
   return (
@@ -64,23 +63,11 @@ export default function Login() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <Label>Email</Label>
-                <Input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                />
+                <Input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
               </div>
               <div className="space-y-1.5">
                 <Label>Password</Label>
-                <Input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                />
+                <Input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
               </div>
 
               {error && (

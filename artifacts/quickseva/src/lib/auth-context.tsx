@@ -1,16 +1,16 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { storage, User, Provider } from "./storage";
+import { api, session, User, Provider } from "./api";
 
 interface AuthContextType {
   user: User | null;
   provider: Provider | null;
-  login: (email: string, password: string) => { success: boolean; error?: string };
-  loginProvider: (email: string, password: string) => { success: boolean; error?: string };
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginProvider: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isAdmin: boolean;
   isProvider: boolean;
   isUser: boolean;
-  refreshProvider: () => void;
+  refreshProvider: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -20,52 +20,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [provider, setProvider] = useState<Provider | null>(null);
 
   useEffect(() => {
-    // Seed sample providers only if no data exists yet — never wipe real data
-    storage.seedSampleData();
-
-    const savedUser = storage.getCurrentUser();
-    const savedProvider = storage.getCurrentProvider();
+    const savedUser = session.getUser();
+    const savedProvider = session.getProvider();
     if (savedUser) setUser(savedUser);
-    if (savedProvider) {
-      const providers = storage.getProviders();
-      const fresh = providers.find(p => p.id === savedProvider.id);
-      setProvider(fresh || savedProvider);
-    }
+    if (savedProvider) setProvider(savedProvider);
   }, []);
 
-  const login = (email: string, password: string) => {
-    const result = storage.loginUser(email, password);
-    if (result.success && result.user) {
-      setUser(result.user);
-      storage.setCurrentUser(result.user);
+  const login = async (email: string, password: string) => {
+    try {
+      const result = await api.loginUser(email, password);
+      if (result.success && result.user) {
+        setUser(result.user);
+        session.setUser(result.user);
+      }
+      return { success: result.success };
+    } catch (e: any) {
+      return { success: false, error: e.message || "Login failed" };
     }
-    return { success: result.success, error: result.error };
   };
 
-  const loginProvider = (email: string, password: string) => {
-    const result = storage.loginProvider(email, password);
-    if (result.success && result.provider) {
-      setProvider(result.provider);
-      storage.setCurrentProvider(result.provider);
+  const loginProvider = async (email: string, password: string) => {
+    try {
+      const result = await api.loginProvider(email, password);
+      if (result.success && result.provider) {
+        setProvider(result.provider);
+        session.setProvider(result.provider);
+      }
+      return { success: result.success };
+    } catch (e: any) {
+      return { success: false, error: e.message || "Login failed" };
     }
-    return { success: result.success, error: result.error };
   };
 
   const logout = () => {
     setUser(null);
     setProvider(null);
-    storage.setCurrentUser(null);
-    storage.setCurrentProvider(null);
+    session.setUser(null);
+    session.setProvider(null);
   };
 
-  const refreshProvider = () => {
+  const refreshProvider = async () => {
     if (provider) {
-      const providers = storage.getProviders();
-      const fresh = providers.find(p => p.id === provider.id);
-      if (fresh) {
+      try {
+        const fresh = await api.getProvider(provider.id);
         setProvider(fresh);
-        storage.setCurrentProvider(fresh);
-      }
+        session.setProvider(fresh);
+      } catch {}
     }
   };
 

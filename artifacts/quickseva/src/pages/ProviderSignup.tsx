@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { storage, SERVICE_CATEGORIES } from "@/lib/storage";
+import { api, SERVICE_CATEGORIES } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ export default function ProviderSignup() {
     category: "", subCategory: "", address: "", pinCode: "", openingTime: "09:00", closingTime: "18:00",
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [, navigate] = useLocation();
 
@@ -21,22 +22,26 @@ export default function ProviderSignup() {
 
   const subCategories = form.category ? SERVICE_CATEGORIES[form.category] : [];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (form.password !== form.confirm) { setError("Passwords do not match"); return; }
     if (!form.category || !form.subCategory) { setError("Please select a category and service"); return; }
     if (!/^\d{6}$/.test(form.pinCode)) { setError("PIN code must be 6 digits"); return; }
-
-    const result = storage.registerProvider({
-      ownerName: form.ownerName, shopName: form.shopName, phone: form.phone,
-      email: form.email, password: form.password, category: form.category,
-      subCategory: form.subCategory, address: form.address, pinCode: form.pinCode,
-      openingTime: form.openingTime, closingTime: form.closingTime,
-    });
-
-    if (!result.success) { setError(result.error || "Registration failed"); return; }
-    setSuccess(true);
+    setLoading(true);
+    try {
+      await api.registerProvider({
+        ownerName: form.ownerName, shopName: form.shopName, phone: form.phone,
+        email: form.email, password: form.password, category: form.category,
+        subCategory: form.subCategory, address: form.address, pinCode: form.pinCode,
+        openingTime: form.openingTime, closingTime: form.closingTime,
+      });
+      setSuccess(true);
+    } catch (e: any) {
+      setError(e.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (success) {
@@ -179,8 +184,8 @@ export default function ProviderSignup() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11">
-                Submit Registration
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11" disabled={loading}>
+                {loading ? "Submitting..." : "Submit Registration"}
               </Button>
             </form>
 
