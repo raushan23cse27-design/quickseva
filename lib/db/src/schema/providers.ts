@@ -13,6 +13,8 @@ export const providersTable = pgTable("qs_providers", {
   subCategory: text("sub_category").notNull(),
   address: text("address").notNull(),
   pinCode: text("pin_code").notNull(),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
   openingTime: text("opening_time").notNull(),
   closingTime: text("closing_time").notNull(),
   status: text("status", { enum: ["Pending", "Approved", "Rejected"] }).notNull().default("Pending"),

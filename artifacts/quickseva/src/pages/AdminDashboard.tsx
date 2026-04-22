@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { storage, Provider, Booking } from "@/lib/storage";
+import { api, Provider, Booking } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,13 +19,16 @@ export default function AdminDashboard() {
     loadData();
   }, [isAdmin]);
 
-  const loadData = () => {
-    setProviders(storage.getProviders());
-    setBookings(storage.getBookings());
+  const loadData = async () => {
+    try {
+      const [p, b] = await Promise.all([api.adminGetProviders(), api.adminGetBookings()]);
+      setProviders(p);
+      setBookings(b);
+    } catch {}
   };
 
-  const approve = (id: string) => { storage.approveProvider(id); loadData(); };
-  const reject = (id: string) => { storage.rejectProvider(id); loadData(); };
+  const approve = async (id: string) => { await api.adminApproveProvider(id); loadData(); };
+  const reject = async (id: string) => { await api.adminRejectProvider(id); loadData(); };
 
   const pending = providers.filter(p => p.status === "Pending");
   const approved = providers.filter(p => p.status === "Approved");
@@ -52,7 +55,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
             { label: "Total Providers", value: providers.length, icon: <Users className="w-5 h-5" />, color: "text-blue-600" },
@@ -70,7 +72,6 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-6 w-fit">
           <button
             onClick={() => setTab("providers")}
@@ -88,7 +89,6 @@ export default function AdminDashboard() {
 
         {tab === "providers" && (
           <div className="space-y-6">
-            {/* Pending */}
             {pending.length > 0 && (
               <div>
                 <h2 className="text-base font-semibold text-yellow-700 mb-3 flex items-center gap-2">
@@ -97,20 +97,12 @@ export default function AdminDashboard() {
                 </h2>
                 <div className="grid sm:grid-cols-2 gap-4">
                   {pending.map(provider => (
-                    <ProviderCard
-                      key={provider.id}
-                      provider={provider}
-                      statusColor={statusColor}
-                      renderStars={renderStars}
-                      onApprove={() => approve(provider.id)}
-                      onReject={() => reject(provider.id)}
-                    />
+                    <ProviderCard key={provider.id} provider={provider} statusColor={statusColor} renderStars={renderStars} onApprove={() => approve(provider.id)} onReject={() => reject(provider.id)} />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Approved */}
             {approved.length > 0 && (
               <div>
                 <h2 className="text-base font-semibold text-green-700 mb-3 flex items-center gap-2">
@@ -119,18 +111,12 @@ export default function AdminDashboard() {
                 </h2>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {approved.map(provider => (
-                    <ProviderCard
-                      key={provider.id}
-                      provider={provider}
-                      statusColor={statusColor}
-                      renderStars={renderStars}
-                    />
+                    <ProviderCard key={provider.id} provider={provider} statusColor={statusColor} renderStars={renderStars} />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Rejected */}
             {rejected.length > 0 && (
               <div>
                 <h2 className="text-base font-semibold text-red-700 mb-3 flex items-center gap-2">
@@ -139,13 +125,7 @@ export default function AdminDashboard() {
                 </h2>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {rejected.map(provider => (
-                    <ProviderCard
-                      key={provider.id}
-                      provider={provider}
-                      statusColor={statusColor}
-                      renderStars={renderStars}
-                      onApprove={() => approve(provider.id)}
-                    />
+                    <ProviderCard key={provider.id} provider={provider} statusColor={statusColor} renderStars={renderStars} onApprove={() => approve(provider.id)} />
                   ))}
                 </div>
               </div>
@@ -195,13 +175,7 @@ export default function AdminDashboard() {
   );
 }
 
-function ProviderCard({
-  provider,
-  statusColor,
-  renderStars,
-  onApprove,
-  onReject,
-}: {
+function ProviderCard({ provider, statusColor, renderStars, onApprove, onReject }: {
   provider: Provider;
   statusColor: Record<string, string>;
   renderStars: (r: number) => JSX.Element[];

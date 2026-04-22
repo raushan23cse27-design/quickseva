@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { storage, Booking } from "@/lib/storage";
+import { api, Booking } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Clock, MapPin, Package, CheckCircle } from "lucide-react";
+import { Star, Clock, MapPin, Package, CheckCircle, KeyRound, Map as MapIcon, Gift, Copy } from "lucide-react";
+import LiveMap from "@/components/LiveMap";
 
 const STATUS_COLORS: Record<string, string> = {
   "Request Sent": "bg-blue-100 text-blue-700",
@@ -22,6 +23,8 @@ export default function UserDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [ratingBookingId, setRatingBookingId] = useState<string | null>(null);
   const [hoverRating, setHoverRating] = useState(0);
+  const [showMapId, setShowMapId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const { user, isAdmin } = useAuth();
   const [, navigate] = useLocation();
 
@@ -29,16 +32,20 @@ export default function UserDashboard() {
     if (!user) { navigate("/login"); return; }
     if (isAdmin) { navigate("/admin"); return; }
     loadBookings();
+    const interval = setInterval(loadBookings, 15000);
+    return () => clearInterval(interval);
   }, [user]);
 
-  const loadBookings = () => {
+  const loadBookings = async () => {
     if (!user) return;
-    const all = storage.getBookings().filter(b => b.userId === user.id);
-    setBookings(all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    try {
+      const all = await api.getUserBookings(user.id);
+      setBookings(all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    } catch {}
   };
 
-  const handleRate = (bookingId: string, rating: number) => {
-    storage.rateBooking(bookingId, rating);
+  const handleRate = async (bookingId: string, rating: number) => {
+    await api.rateBooking(bookingId, rating);
     setRatingBookingId(null);
     loadBookings();
   };
@@ -46,6 +53,13 @@ export default function UserDashboard() {
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString("en-IN", {
     day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
   });
+
+  const copyReferral = () => {
+    if (!user) return;
+    navigator.clipboard.writeText(user.referralCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4">
@@ -60,7 +74,33 @@ export default function UserDashboard() {
           </Button>
         </div>
 
-        {/* Stats */}
+        {/* Referral Card */}
+        {user && (
+          <Card className="mb-6 border-0 shadow-md bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+            <CardContent className="pt-5">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <Gift className="w-8 h-8" />
+                  <div>
+                    <p className="font-bold">Refer & Earn ₹50 per friend</p>
+                    <p className="text-xs opacity-90">Your code: <span className="font-mono font-bold">{user.referralCode}</span></p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-xs opacity-90">Earned</p>
+                    <p className="font-bold">₹{user.referralEarnings} ({user.referralCount} friends)</p>
+                  </div>
+                  <Button onClick={copyReferral} variant="secondary" size="sm" className="gap-1.5">
+                    <Copy className="w-3.5 h-3.5" />
+                    {copied ? "Copied!" : "Copy"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-3 gap-4 mb-8">
           {[
             { label: "Total Bookings", value: bookings.length, icon: <Package className="w-5 h-5" /> },
@@ -77,7 +117,6 @@ export default function UserDashboard() {
           ))}
         </div>
 
-        {/* Bookings */}
         {bookings.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
             <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -93,6 +132,8 @@ export default function UserDashboard() {
               const stepIndex = STATUS_STEPS.indexOf(booking.status);
               const progress = booking.status === "Rejected" ? -1 : stepIndex;
               const canRate = booking.status === "Completed" && !booking.rating;
+              const canTrack = ["Accepted", "On the Way", "Work in Progress"].includes(booking.status);
+              const showOtp = ["Accepted", "On the Way", "Work in Progress"].includes(booking.status) && booking.completionOtp;
 
               return (
                 <Card key={booking.id} className="border-0 shadow-sm overflow-hidden">
@@ -120,7 +161,6 @@ export default function UserDashboard() {
                       Booked on {formatDate(booking.createdAt)}
                     </div>
 
-                    {/* Progress bar */}
                     {booking.status !== "Rejected" && (
                       <div className="pt-2">
                         <div className="flex justify-between mb-2">
@@ -142,7 +182,45 @@ export default function UserDashboard() {
                       </div>
                     )}
 
-                    {/* Rating */}
+                    {showOtp && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
+                        <KeyRound className="w-5 h-5 text-amber-700 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-xs text-amber-700 font-medium">Completion OTP — share with provider only when work is done</p>
+                          <p className="text-2xl font-mono font-bold text-amber-900 tracking-wider">{booking.completionOtp}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {canTrack && (
+                      <div>
+                        <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowMapId(showMapId === booking.id ? null : booking.id)}>
+                          <MapIcon className="w-3.5 h-3.5" />
+                          {showMapId === booking.id ? "Hide map" : "Track on map"}
+                        </Button>
+                        {showMapId === booking.id && (
+                          <div className="mt-3">
+                            <LiveMap
+                              providerLat={booking.providerLatitude}
+                              providerLng={booking.providerLongitude}
+                              userLat={booking.userLatitude}
+                              userLng={booking.userLongitude}
+                            />
+                            {booking.locationUpdatedAt && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Provider location updated: {new Date(booking.locationUpdatedAt).toLocaleTimeString("en-IN")}
+                              </p>
+                            )}
+                            {!booking.providerLatitude && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Waiting for provider to share location...
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {canRate && (
                       <div className="pt-2">
                         {ratingBookingId === booking.id ? (

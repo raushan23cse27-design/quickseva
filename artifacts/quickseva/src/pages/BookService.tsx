@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
-import { storage, Provider, isProviderOpen, formatTime } from "@/lib/storage";
+import { api, Provider, isProviderOpen, formatTime, getCurrentLocation } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Clock, Phone, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
+import { Star, MapPin, Clock, Phone, CheckCircle2, AlertCircle, ArrowLeft, Crosshair } from "lucide-react";
 
 export default function BookService() {
   const { id } = useParams<{ id: string }>();
@@ -16,50 +16,67 @@ export default function BookService() {
   const [problem, setProblem] = useState("");
   const [preferredTime, setPreferredTime] = useState("");
   const [userPhone, setUserPhone] = useState("");
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const { user } = useAuth();
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    const providers = storage.getProviders();
-    const found = providers.find(p => p.id === id);
-    setProvider(found || null);
-    if (user) setUserPhone((user as any).phone || "");
+    if (!id) return;
+    api.getProvider(id).then(setProvider).catch(() => setProvider(null));
+    if (user) setUserPhone(user.phone || "");
   }, [id, user]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const detectLocation = async () => {
+    try {
+      const c = await getCurrentLocation();
+      setCoords(c);
+    } catch {
+      setError("Could not get your location. Please enable location permission.");
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!user) { navigate("/login"); return; }
     if (!provider) return;
-
-    storage.createBooking({
-      userId: user.id,
-      userName: user.name,
-      userPhone,
-      providerId: provider.id,
-      providerName: provider.ownerName,
-      shopName: provider.shopName,
-      category: provider.category,
-      address,
-      problemDescription: problem,
-      preferredTime,
-    });
-    setSuccess(true);
-    setTimeout(() => navigate("/dashboard"), 2000);
+    setLoading(true);
+    try {
+      await api.createBooking({
+        userId: user.id,
+        userName: user.name,
+        userPhone,
+        providerId: provider.id,
+        providerName: provider.ownerName,
+        shopName: provider.shopName,
+        category: provider.category,
+        address,
+        problemDescription: problem,
+        preferredTime,
+        userLatitude: coords?.latitude ?? null,
+        userLongitude: coords?.longitude ?? null,
+      });
+      setSuccess(true);
+      setTimeout(() => navigate("/dashboard"), 1500);
+    } catch (e: any) {
+      setError(e.message || "Booking failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!provider) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Provider not found</p>
+        <p className="text-gray-500">Loading provider...</p>
       </div>
     );
   }
 
   const open = isProviderOpen(provider);
-
   const renderStars = (rating: number) => Array.from({ length: 5 }, (_, i) => (
     <Star key={i} className={`w-4 h-4 ${i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
   ));
@@ -79,12 +96,11 @@ export default function BookService() {
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-2xl mx-auto">
-        <button onClick={() => navigate(-1 as any)} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 text-sm">
+        <button onClick={() => navigate("/")} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 text-sm">
           <ArrowLeft className="w-4 h-4" />
-          Back to results
+          Back
         </button>
 
-        {/* Provider Info Card */}
         <Card className="mb-6 border-0 shadow-md">
           <CardContent className="pt-5">
             <div className="flex items-start justify-between">
@@ -118,7 +134,6 @@ export default function BookService() {
           </CardContent>
         </Card>
 
-        {/* Booking Form */}
         <Card className="border-0 shadow-md">
           <CardHeader>
             <CardTitle>Book This Service</CardTitle>
@@ -133,12 +148,7 @@ export default function BookService() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <Label>Your Phone Number *</Label>
-                <Input
-                  placeholder="9876543210"
-                  value={userPhone}
-                  onChange={e => setUserPhone(e.target.value)}
-                  required
-                />
+                <Input placeholder="9876543210" value={userPhone} onChange={e => setUserPhone(e.target.value)} required />
               </div>
 
               <div className="space-y-1.5">
@@ -151,6 +161,10 @@ export default function BookService() {
                   rows={2}
                   className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 />
+                <Button type="button" onClick={detectLocation} variant="outline" size="sm" className="gap-2 mt-1">
+                  <Crosshair className="w-3.5 h-3.5" />
+                  {coords ? `Location captured (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})` : "Use my current location"}
+                </Button>
               </div>
 
               <div className="space-y-1.5">
@@ -183,12 +197,8 @@ export default function BookService() {
                 </div>
               )}
 
-              <Button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11"
-                disabled={!user}
-              >
-                Send Booking Request
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11" disabled={!user || loading}>
+                {loading ? "Sending..." : "Send Booking Request"}
               </Button>
             </form>
           </CardContent>

@@ -14,6 +14,10 @@ export default function Signup() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [referralCode, setReferralCode] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("ref") || "";
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -27,7 +31,7 @@ export default function Signup() {
     if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
     setLoading(true);
     try {
-      await api.registerUser({ name, email, phone, password });
+      await api.registerUser({ name, email, phone, password, referralCode: referralCode || undefined });
       await login(email, password);
       setSuccess(true);
       setTimeout(() => navigate("/dashboard"), 1500);
@@ -86,6 +90,11 @@ export default function Signup() {
               <div className="space-y-1.5">
                 <Label>Confirm Password</Label>
                 <Input type="password" placeholder="Repeat password" value={confirm} onChange={e => setConfirm(e.target.value)} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Referral Code (optional)</Label>
+                <Input placeholder="Got a friend's code? Enter here" value={referralCode} onChange={e => setReferralCode(e.target.value.toUpperCase())} />
+                <p className="text-xs text-gray-500">Your friend gets ₹50 if you sign up with their code.</p>
               </div>
 
               {error && (

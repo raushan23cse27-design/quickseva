@@ -12,6 +12,8 @@ export const bookingsTable = pgTable("qs_bookings", {
   shopName: text("shop_name").notNull(),
   category: text("category").notNull(),
   address: text("address").notNull(),
+  userLatitude: real("user_latitude"),
+  userLongitude: real("user_longitude"),
   problemDescription: text("problem_description").notNull(),
   preferredTime: text("preferred_time").notNull(),
   status: text("status", {
@@ -19,6 +21,10 @@ export const bookingsTable = pgTable("qs_bookings", {
   }).notNull().default("Request Sent"),
   rating: real("rating"),
   amount: integer("amount"),
+  completionOtp: text("completion_otp"),
+  providerLatitude: real("provider_latitude"),
+  providerLongitude: real("provider_longitude"),
+  locationUpdatedAt: timestamp("location_updated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

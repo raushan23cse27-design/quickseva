@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { storage, Booking } from "@/lib/storage";
+import { api, Booking, getCurrentLocation } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Clock, MapPin, IndianRupee, Briefcase, TrendingUp, AlertTriangle } from "lucide-react";
+import { Star, Clock, MapPin, IndianRupee, Briefcase, TrendingUp, AlertTriangle, Crosshair, KeyRound } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
   "Request Sent": "bg-blue-100 text-blue-700",
@@ -21,25 +22,77 @@ type BookingStatus = Booking["status"];
 export default function ProviderDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [amount, setAmount] = useState<Record<string, string>>({});
+  const [otp, setOtp] = useState<Record<string, string>>({});
+  const [error, setError] = useState<Record<string, string>>({});
+  const [sharing, setSharing] = useState<string | null>(null);
+  const watchRef = useRef<number | null>(null);
   const { provider, isProvider, refreshProvider } = useAuth();
   const [, navigate] = useLocation();
 
   useEffect(() => {
     if (!isProvider) { navigate("/login"); return; }
     loadBookings();
+    refreshProvider();
+    const interval = setInterval(loadBookings, 15000);
+    return () => clearInterval(interval);
   }, [isProvider]);
 
-  const loadBookings = () => {
+  useEffect(() => {
+    return () => {
+      if (watchRef.current != null) navigator.geolocation.clearWatch(watchRef.current);
+    };
+  }, []);
+
+  const loadBookings = async () => {
     if (!provider) return;
-    const all = storage.getBookings().filter(b => b.providerId === provider.id);
-    setBookings(all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    try {
+      const all = await api.getProviderBookings(provider.id);
+      setBookings(all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    } catch {}
   };
 
-  const updateStatus = (bookingId: string, status: BookingStatus) => {
-    const earning = parseFloat(amount[bookingId] || "500");
-    storage.updateBookingStatus(bookingId, status, status === "Completed" ? earning : undefined);
-    refreshProvider();
-    loadBookings();
+  const updateStatus = async (bookingId: string, status: BookingStatus) => {
+    setError(e => ({ ...e, [bookingId]: "" }));
+    try {
+      const opts: { amount?: number; otp?: string } = {};
+      if (status === "Completed") {
+        const enteredOtp = otp[bookingId];
+        if (!enteredOtp || enteredOtp.length !== 6) {
+          setError(e => ({ ...e, [bookingId]: "Enter the 6-digit OTP from customer" }));
+          return;
+        }
+        opts.otp = enteredOtp;
+        opts.amount = parseFloat(amount[bookingId] || "500");
+      }
+      await api.updateBookingStatus(bookingId, status, opts);
+      if (status === "Completed" && sharing === bookingId) stopSharingLocation();
+      await refreshProvider();
+      await loadBookings();
+    } catch (err: any) {
+      setError(e => ({ ...e, [bookingId]: err.message || "Update failed" }));
+    }
+  };
+
+  const startSharingLocation = async (bookingId: string) => {
+    try {
+      const c = await getCurrentLocation();
+      await api.updateBookingLocation(bookingId, c.latitude, c.longitude);
+      setSharing(bookingId);
+      if (watchRef.current != null) navigator.geolocation.clearWatch(watchRef.current);
+      watchRef.current = navigator.geolocation.watchPosition(
+        pos => { api.updateBookingLocation(bookingId, pos.coords.latitude, pos.coords.longitude).catch(() => {}); },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 10000 }
+      );
+    } catch {
+      setError(e => ({ ...e, [bookingId]: "Could not access location" }));
+    }
+  };
+
+  const stopSharingLocation = () => {
+    if (watchRef.current != null) navigator.geolocation.clearWatch(watchRef.current);
+    watchRef.current = null;
+    setSharing(null);
   };
 
   const nextStatus: Record<string, BookingStatus> = {
@@ -53,21 +106,19 @@ export default function ProviderDashboard() {
     day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
   });
 
-  const freshProvider = provider ? (storage.getProviders().find(p => p.id === provider.id) || provider) : null;
-
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Provider Dashboard</h1>
-          <p className="text-gray-500 mt-1">{freshProvider?.shopName}</p>
-          {freshProvider?.status === "Pending" && (
+          <p className="text-gray-500 mt-1">{provider?.shopName}</p>
+          {provider?.status === "Pending" && (
             <div className="mt-3 flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-yellow-800 text-sm">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
               Your account is pending admin approval. Bookings will appear once approved.
             </div>
           )}
-          {freshProvider?.status === "Rejected" && (
+          {provider?.status === "Rejected" && (
             <div className="mt-3 flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg p-3 text-red-800 text-sm">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
               Your account has been rejected. Please contact support.
@@ -75,12 +126,11 @@ export default function ProviderDashboard() {
           )}
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
-            { label: "Total Jobs", value: freshProvider?.jobsDone || 0, icon: <Briefcase className="w-5 h-5" />, color: "text-blue-600" },
-            { label: "Total Earnings", value: `₹${(freshProvider?.earnings || 0).toLocaleString("en-IN")}`, icon: <IndianRupee className="w-5 h-5" />, color: "text-green-600" },
-            { label: "Rating", value: freshProvider?.rating ? `${freshProvider.rating}⭐` : "N/A", icon: <Star className="w-5 h-5" />, color: "text-yellow-600" },
+            { label: "Total Jobs", value: provider?.jobsDone || 0, icon: <Briefcase className="w-5 h-5" />, color: "text-blue-600" },
+            { label: "Total Earnings", value: `₹${(provider?.earnings || 0).toLocaleString("en-IN")}`, icon: <IndianRupee className="w-5 h-5" />, color: "text-green-600" },
+            { label: "Rating", value: provider?.rating ? `${provider.rating}⭐` : "N/A", icon: <Star className="w-5 h-5" />, color: "text-yellow-600" },
             { label: "Active Jobs", value: bookings.filter(b => !["Completed", "Rejected"].includes(b.status)).length, icon: <TrendingUp className="w-5 h-5" />, color: "text-purple-600" },
           ].map(stat => (
             <Card key={stat.label} className="border-0 shadow-sm">
@@ -93,7 +143,6 @@ export default function ProviderDashboard() {
           ))}
         </div>
 
-        {/* Bookings */}
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Incoming Requests ({bookings.length})</h2>
 
         {bookings.length === 0 ? (
@@ -108,6 +157,7 @@ export default function ProviderDashboard() {
               const next = nextStatus[booking.status];
               const isCompleted = booking.status === "Completed";
               const isRejected = booking.status === "Rejected";
+              const isInProgress = ["Accepted", "On the Way", "Work in Progress"].includes(booking.status);
 
               return (
                 <Card key={booking.id} className="border-0 shadow-sm">
@@ -152,39 +202,77 @@ export default function ProviderDashboard() {
                       </div>
                     )}
 
+                    {isInProgress && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-2 text-sm text-blue-800">
+                            <Crosshair className="w-4 h-4" />
+                            {sharing === booking.id ? "Live location sharing ON" : "Share live location with customer"}
+                          </div>
+                          {sharing === booking.id ? (
+                            <Button size="sm" variant="outline" onClick={stopSharingLocation}>Stop sharing</Button>
+                          ) : (
+                            <Button size="sm" onClick={() => startSharingLocation(booking.id)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                              Start sharing
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {!isCompleted && !isRejected && (
-                      <div className="flex gap-2 pt-1 flex-wrap">
-                        {booking.status === "Request Sent" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 border-red-200 hover:bg-red-50"
-                            onClick={() => updateStatus(booking.id, "Rejected")}
-                          >
-                            Reject
-                          </Button>
-                        )}
+                      <div className="space-y-2 pt-1">
                         {booking.status === "Work in Progress" && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">Amount (₹):</span>
-                            <input
-                              type="number"
-                              value={amount[booking.id] || "500"}
-                              onChange={e => setAmount(a => ({ ...a, [booking.id]: e.target.value }))}
-                              className="w-24 h-8 px-2 text-sm border border-gray-200 rounded-md"
-                              min="0"
-                            />
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+                            <div className="flex items-center gap-2 text-sm text-amber-800 font-medium">
+                              <KeyRound className="w-4 h-4" />
+                              Ask customer for the 6-digit completion OTP
+                            </div>
+                            <div className="flex flex-wrap gap-2 items-center">
+                              <Input
+                                placeholder="6-digit OTP"
+                                maxLength={6}
+                                value={otp[booking.id] || ""}
+                                onChange={e => setOtp(o => ({ ...o, [booking.id]: e.target.value.replace(/\D/g, "") }))}
+                                className="w-32 h-9 font-mono"
+                              />
+                              <span className="text-sm text-gray-600">Amount ₹:</span>
+                              <Input
+                                type="number"
+                                value={amount[booking.id] || "500"}
+                                onChange={e => setAmount(a => ({ ...a, [booking.id]: e.target.value }))}
+                                className="w-24 h-9"
+                                min="0"
+                              />
+                            </div>
                           </div>
                         )}
-                        {next && (
-                          <Button
-                            size="sm"
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                            onClick={() => updateStatus(booking.id, next)}
-                          >
-                            Mark as {next}
-                          </Button>
+
+                        {error[booking.id] && (
+                          <p className="text-sm text-red-600">{error[booking.id]}</p>
                         )}
+
+                        <div className="flex gap-2 flex-wrap">
+                          {booking.status === "Request Sent" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={() => updateStatus(booking.id, "Rejected")}
+                            >
+                              Reject
+                            </Button>
+                          )}
+                          {next && (
+                            <Button
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                              onClick={() => updateStatus(booking.id, next)}
+                            >
+                              Mark as {next}
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     )}
                   </CardContent>

@@ -12,6 +12,10 @@ export interface User {
   email: string;
   phone: string;
   role: "user" | "provider" | "admin";
+  referralCode: string;
+  referredBy?: string | null;
+  referralCount: number;
+  referralEarnings: number;
 }
 
 export interface Provider {
@@ -24,6 +28,8 @@ export interface Provider {
   subCategory: string;
   address: string;
   pinCode: string;
+  latitude?: number | null;
+  longitude?: number | null;
   openingTime: string;
   closingTime: string;
   status: "Pending" | "Approved" | "Rejected";
@@ -43,11 +49,17 @@ export interface Booking {
   shopName: string;
   category: string;
   address: string;
+  userLatitude?: number | null;
+  userLongitude?: number | null;
   problemDescription: string;
   preferredTime: string;
   status: "Request Sent" | "Accepted" | "On the Way" | "Work in Progress" | "Completed" | "Rejected";
   rating?: number | null;
   amount?: number | null;
+  completionOtp?: string | null;
+  providerLatitude?: number | null;
+  providerLongitude?: number | null;
+  locationUpdatedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -63,13 +75,13 @@ async function req<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  registerUser: (data: { name: string; email: string; password: string; phone: string }) =>
+  registerUser: (data: { name: string; email: string; password: string; phone: string; referralCode?: string }) =>
     req<{ success: boolean; user: User }>("/api/auth/register", { method: "POST", body: JSON.stringify(data) }),
 
   loginUser: (email: string, password: string) =>
     req<{ success: boolean; user: User }>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
 
-  registerProvider: (data: Record<string, string>) =>
+  registerProvider: (data: Record<string, unknown>) =>
     req<{ success: boolean; provider: Provider }>("/api/auth/provider/register", { method: "POST", body: JSON.stringify(data) }),
 
   loginProvider: (email: string, password: string) =>
@@ -84,15 +96,18 @@ export const api = {
 
   getProvider: (id: string) => req<Provider>(`/api/providers/${id}`),
 
-  createBooking: (data: Omit<Booking, "id" | "status" | "rating" | "amount" | "createdAt" | "updatedAt">) =>
+  createBooking: (data: Partial<Booking>) =>
     req<{ success: boolean; booking: Booking }>("/api/bookings", { method: "POST", body: JSON.stringify(data) }),
 
   getUserBookings: (userId: string) => req<Booking[]>(`/api/bookings/user/${userId}`),
 
   getProviderBookings: (providerId: string) => req<Booking[]>(`/api/bookings/provider/${providerId}`),
 
-  updateBookingStatus: (bookingId: string, status: Booking["status"], amount?: number) =>
-    req<{ success: boolean }>(`/api/bookings/${bookingId}/status`, { method: "PATCH", body: JSON.stringify({ status, amount }) }),
+  updateBookingStatus: (bookingId: string, status: Booking["status"], opts?: { amount?: number; otp?: string }) =>
+    req<{ success: boolean }>(`/api/bookings/${bookingId}/status`, { method: "PATCH", body: JSON.stringify({ status, ...opts }) }),
+
+  updateBookingLocation: (bookingId: string, latitude: number, longitude: number) =>
+    req<{ success: boolean }>(`/api/bookings/${bookingId}/location`, { method: "PATCH", body: JSON.stringify({ latitude, longitude }) }),
 
   rateBooking: (bookingId: string, rating: number) =>
     req<{ success: boolean }>(`/api/bookings/${bookingId}/rate`, { method: "PATCH", body: JSON.stringify({ rating }) }),
@@ -137,4 +152,15 @@ export function formatTime(time: string): string {
   const period = h >= 12 ? "PM" : "AM";
   const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
   return `${displayH}:${m.toString().padStart(2, "0")} ${period}`;
+}
+
+export function getCurrentLocation(): Promise<{ latitude: number; longitude: number }> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error("Geolocation not supported"));
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+      err => reject(err),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
 }
