@@ -6,6 +6,7 @@ interface AuthContextType {
   provider: Provider | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   loginProvider: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginDirect: (user: User) => void;
   logout: () => void;
   isAdmin: boolean;
   isProvider: boolean;
@@ -52,6 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginDirect = (u: User) => {
+    setUser(u);
+    session.setUser(u);
+  };
+
   const logout = () => {
     setUser(null);
     setProvider(null);
@@ -75,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       provider,
       login,
       loginProvider,
+      loginDirect,
       logout,
       isAdmin: user?.role === "admin",
       isProvider: !!provider,

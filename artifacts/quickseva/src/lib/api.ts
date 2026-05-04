@@ -112,6 +112,12 @@ export const api = {
   rateBooking: (bookingId: string, rating: number) =>
     req<{ success: boolean }>(`/api/bookings/${bookingId}/rate`, { method: "PATCH", body: JSON.stringify({ rating }) }),
 
+  requestOtp: (email: string) =>
+    req<{ success: boolean; otp: string; message: string }>("/api/auth/request-otp", { method: "POST", body: JSON.stringify({ email }) }),
+
+  verifyOtp: (email: string, otp: string) =>
+    req<{ success: boolean; user: User }>("/api/auth/verify-otp", { method: "POST", body: JSON.stringify({ email, otp }) }),
+
   adminGetProviders: () => req<Provider[]>("/api/admin/providers"),
   adminGetUsers: () => req<User[]>("/api/admin/users"),
   adminGetBookings: () => req<Booking[]>("/api/admin/bookings"),
