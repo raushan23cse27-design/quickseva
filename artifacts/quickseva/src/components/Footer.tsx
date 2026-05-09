@@ -35,40 +35,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div>
-            <h4 className="text-white font-semibold mb-4">Contact & Support</h4>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-blue-900/50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <GraduationCap className="w-4 h-4 text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-white font-semibold">Misha Kumari</p>
-                  <p className="text-gray-400 text-xs">CSE 3rd Year · Project Admin</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-4 h-4 text-blue-400" />
-                </div>
-                <a href="mailto:admin@quickseva.com" className="hover:text-white transition-colors text-sm">
-                  admin@quickseva.com
-                </a>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Phone className="w-4 h-4 text-blue-400" />
-                </div>
-                <span className="text-sm">+91 98765 43210</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-4 h-4 text-blue-400" />
-                </div>
-                <span className="text-sm">India</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="border-t border-gray-800 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
