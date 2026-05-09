@@ -72,13 +72,8 @@ export default function Navbar() {
                   <span className="hidden sm:inline">Dashboard</span>
                 </Button>
               )}
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-blue-600" />
-                </div>
-                <span className="hidden sm:inline font-medium">
-                  {isAdmin ? "Admin" : isProvider ? provider?.ownerName : user?.name}
-                </span>
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-blue-600" />
               </div>
               <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-1.5 text-gray-500 hover:text-red-600">
                 <LogOut className="w-4 h-4" />
