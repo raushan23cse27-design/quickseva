@@ -12,6 +12,7 @@ router.get("/providers", async (req, res) => {
     if (category) all = all.filter(p => p.category === category);
     return res.json(all.map(({ password: _, ...p }) => p));
   } catch (e) {
+    req.log.error(e, "GET /providers failed");
     return res.status(500).json({ error: "Server error" });
   }
 });
@@ -23,6 +24,7 @@ router.get("/providers/:id", async (req, res) => {
     const { password: _, ...p } = providers[0];
     return res.json(p);
   } catch (e) {
+    req.log.error(e, "GET /providers/:id failed");
     return res.status(500).json({ error: "Server error" });
   }
 });
