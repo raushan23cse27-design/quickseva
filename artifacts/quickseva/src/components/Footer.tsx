@@ -39,10 +39,6 @@ export default function Footer() {
 
         <div className="border-t border-gray-800 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-gray-500">© 2026 QuickSeva. Built with ❤️ in India.</p>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <GraduationCap className="w-3.5 h-3.5 text-blue-400" />
-            <span>Developed by <span className="text-blue-400 font-medium">Misha Kumari</span>, CSE 3rd Year</span>
-          </div>
         </div>
       </div>
     </footer>
